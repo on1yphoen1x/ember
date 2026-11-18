@@ -11,7 +11,9 @@ import SwiftUI
 final class LockScreenLyrics {
     private let lyrics: Lyrics
     private let nowPlaying: NowPlaying
+    private let weather: Weather
     private var window: NSWindow?
+    private var controls: NSWindow?
     private var observers: [NSObjectProtocol] = []
     private var space: Int32?
 
@@ -23,9 +25,10 @@ final class LockScreenLyrics {
         }
     }
 
-    init(lyrics: Lyrics, nowPlaying: NowPlaying) {
+    init(lyrics: Lyrics, nowPlaying: NowPlaying, weather: Weather) {
         self.lyrics = lyrics
         self.nowPlaying = nowPlaying
+        self.weather = weather
 
         let center = DistributedNotificationCenter.default()
         observers.append(center.addObserver(forName: Notification.Name("com.apple.screenIsLocked"), object: nil, queue: .main) { [weak self] _ in
@@ -44,10 +47,37 @@ final class LockScreenLyrics {
         window.orderFrontRegardless()
         self.window = window
         moveToLockScreen(window)
+
+        // The buttons live in their own small window so everything else lets clicks through to the password field.
+        let controls = self.controls ?? makeControls()
+        let size = CGSize(width: 220, height: 56)
+        controls.setFrame(CGRect(
+            x: screen.frame.midX - size.width / 2,
+            y: screen.frame.minY + screen.frame.height * LockScreenView.reservedFraction + 12,
+            width: size.width,
+            height: size.height
+        ), display: true)
+        controls.orderFrontRegardless()
+        self.controls = controls
+        moveToLockScreen(controls)
     }
 
     private func hide() {
         window?.orderOut(nil)
+        controls?.orderOut(nil)
+    }
+
+    private func makeControls() -> NSWindow {
+        let panel = NSPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.hasShadow = false
+        panel.level = .screenSaver
+        panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary, .ignoresCycle]
+        let host = IslandHostingView(rootView: LockControls(nowPlaying: nowPlaying))
+        host.sizingOptions = []
+        panel.contentView = host
+        return panel
     }
 
     private func makeWindow() -> NSWindow {
@@ -58,7 +88,7 @@ final class LockScreenLyrics {
         window.ignoresMouseEvents = true
         window.level = .screenSaver
         window.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary, .ignoresCycle]
-        let host = NSHostingView(rootView: LockScreenView(lyrics: lyrics, nowPlaying: nowPlaying))
+        let host = NSHostingView(rootView: LockScreenView(lyrics: lyrics, nowPlaying: nowPlaying, weather: weather))
         host.sizingOptions = []
         window.contentView = host
         return window
@@ -109,8 +139,11 @@ private struct SkyLight {
 }
 
 struct LockScreenView: View {
+    static let reservedFraction: CGFloat = 0.24
+
     @ObservedObject var lyrics: Lyrics
     @ObservedObject var nowPlaying: NowPlaying
+    @ObservedObject var weather: Weather
 
     @AppStorage(SettingsKey.lockScreenBackdrop) private var showsBackdrop = true
     @AppStorage(SettingsKey.lockScreenClock) private var showsClock = true
@@ -128,14 +161,14 @@ struct LockScreenView: View {
                 TimelineView(.animation(minimumInterval: 0.1)) { context in
                     VStack(spacing: 0) {
                         if showsBackdrop && showsClock {
-                            LockClock(date: context.date, accent: Color(nsColor: nowPlaying.accent), showsBattery: showsBattery)
+                            LockClock(date: context.date, accent: Color(nsColor: nowPlaying.accent), showsBattery: showsBattery, weather: weather.conditions)
                                 .padding(.top, height * 0.07)
                         }
                         Spacer(minLength: 20)
                         nowPlayingCard(at: context.date, height: height)
                         Spacer(minLength: 20)
-                        // The password field and Touch ID prompt live down here.
-                        Color.clear.frame(height: height * 0.24)
+                        // The playback buttons sit just above the password field and Touch ID prompt.
+                        Color.clear.frame(height: height * Self.reservedFraction + 76)
                     }
                 }
             }
@@ -238,6 +271,7 @@ struct LockClock: View {
     let date: Date
     let accent: Color
     let showsBattery: Bool
+    let weather: Weather.Conditions?
 
     var body: some View {
         VStack(spacing: 2) {
@@ -248,12 +282,17 @@ struct LockClock: View {
                 .font(.system(size: 112, weight: .heavy, design: .rounded).monospacedDigit())
                 .foregroundStyle(LinearGradient(colors: [.white, accent.opacity(0.9)], startPoint: .top, endPoint: .bottom))
                 .shadow(color: .black.opacity(0.25), radius: 16, y: 6)
-            if showsBattery, let battery = Battery.read(at: date) {
-                Label("\(battery.percent)%", systemImage: battery.isCharging ? "bolt.fill" : battery.symbol)
-                    .font(.system(size: 14, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(.white.opacity(0.75))
-                    .padding(.top, 4)
+            HStack(spacing: 18) {
+                if let weather {
+                    Label(weather.temperatureText, systemImage: weather.symbol)
+                }
+                if showsBattery, let battery = Battery.read(at: date) {
+                    Label("\(battery.percent)%", systemImage: battery.isCharging ? "bolt.fill" : battery.symbol)
+                }
             }
+            .font(.system(size: 14, weight: .semibold).monospacedDigit())
+            .foregroundStyle(.white.opacity(0.75))
+            .padding(.top, 4)
         }
     }
 }
@@ -271,5 +310,22 @@ struct LockProgress: View {
             }
         }
         .frame(height: 4)
+    }
+}
+
+struct LockControls: View {
+    @ObservedObject var nowPlaying: NowPlaying
+
+    var body: some View {
+        HStack(spacing: 30) {
+            TransportButton(symbol: "backward.fill", size: 16) { nowPlaying.previousTrack() }
+            TransportButton(symbol: nowPlaying.isPlaying ? "pause.fill" : "play.fill", size: 22) { nowPlaying.togglePlayPause() }
+            TransportButton(symbol: "forward.fill", size: 16) { nowPlaying.nextTrack() }
+        }
+        .padding(.horizontal, 22)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(BehindWindowBlur().clipShape(Capsule()))
+        .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 1))
+        .environment(\.colorScheme, .dark)
     }
 }

@@ -12,7 +12,8 @@ struct FlintApp: App {
                 lyrics: appDelegate.lyrics,
                 shelf: appDelegate.shelf,
                 updater: appDelegate.updater,
-                lockScreen: appDelegate.lockScreen
+                lockScreen: appDelegate.lockScreen,
+                weather: appDelegate.weather
             )
         }
         .defaultSize(width: 860, height: 600)
@@ -30,14 +31,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let updater = Updater()
     let ember = EmberLink()
     let shelf = Shelf()
+    let devices = DeviceWatcher()
+    let weather = Weather()
     lazy var lyrics = Lyrics(nowPlaying: nowPlaying)
-    lazy var lockScreen = LockScreenLyrics(lyrics: lyrics, nowPlaying: nowPlaying)
+    lazy var lockScreen = LockScreenLyrics(lyrics: lyrics, nowPlaying: nowPlaying, weather: weather)
     private var island: IslandController?
+    private var corners: ScreenCorners?
     private var windowObserver: NSObjectProtocol?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let model = IslandModel(nowPlaying: nowPlaying, ember: ember, shelf: shelf)
+        let model = IslandModel(nowPlaying: nowPlaying, ember: ember, shelf: shelf, lyrics: lyrics, devices: devices, weather: weather)
         island = IslandController(model: model)
+        corners = ScreenCorners()
         _ = lockScreen
 
         if !UserDefaults.standard.bool(forKey: SettingsKey.hasWelcomed) {
@@ -48,9 +53,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         windowObserver = NotificationCenter.default.addObserver(
             forName: NSWindow.willCloseNotification, object: nil, queue: .main
         ) { note in
-            let isMain = (note.object as? NSWindow)?.identifier?.rawValue.contains("main") == true
-            guard isMain else { return }
+            let window = note.object as? NSWindow
             MainActor.assumeIsolated {
+                guard window?.identifier?.rawValue.contains("main") == true else { return }
                 NSApp.setActivationPolicy(.accessory)
                 UserDefaults.standard.set(true, forKey: "showsMenuBarIcon")
             }

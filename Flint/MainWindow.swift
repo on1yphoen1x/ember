@@ -55,6 +55,7 @@ struct MainWindow: View {
     @ObservedObject var shelf: Shelf
     @ObservedObject var updater: Updater
     let lockScreen: LockScreenLyrics
+    let weather: Weather
 
     @Environment(\.openWindow) private var openWindow
     @State private var page: Page? = .lyrics
@@ -90,7 +91,7 @@ struct MainWindow: View {
             case .shelf:
                 ShelfPage(shelf: shelf)
             case .general:
-                GeneralSettings()
+                GeneralSettings(weather: weather)
             case .media:
                 MediaSettings(nowPlaying: nowPlaying)
             case .notch:

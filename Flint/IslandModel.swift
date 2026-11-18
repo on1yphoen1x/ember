@@ -21,11 +21,23 @@ final class IslandModel: ObservableObject {
     let nowPlaying: NowPlaying
     let ember: EmberLink
     let shelf: Shelf
+    let lyrics: Lyrics
+    let devices: DeviceWatcher
+    let weather: Weather
 
-    init(nowPlaying: NowPlaying, ember: EmberLink, shelf: Shelf) {
+    init(nowPlaying: NowPlaying, ember: EmberLink, shelf: Shelf, lyrics: Lyrics, devices: DeviceWatcher, weather: Weather) {
         self.nowPlaying = nowPlaying
         self.ember = ember
         self.shelf = shelf
+        self.lyrics = lyrics
+        self.devices = devices
+        self.weather = weather
+    }
+
+    /// Charging and headphone notes briefly take over the closed island.
+    var alert: IslandAlert? {
+        guard UserDefaults.standard.bool(forKey: SettingsKey.showsAlerts, default: true) else { return nil }
+        return devices.alert
     }
 
     /// A recording takes the island over from music until it stops.
@@ -51,7 +63,7 @@ final class IslandModel: ObservableObject {
     }
 
     var showsCompact: Bool {
-        showsRecording || showsClipSaved || showsClipping || (showsMedia && nowPlaying.isPlaying && nowPlaying.track != nil)
+        alert != nil || showsRecording || showsClipSaved || showsClipping || (showsMedia && nowPlaying.isPlaying && nowPlaying.track != nil)
     }
 
     var tabs: [Tab] {
@@ -83,13 +95,14 @@ final class IslandModel: ObservableObject {
             return CGSize(width: width + topRadius * 2, height: headerHeight + Self.expandedContentHeight + 14)
         }
         if showsCompact {
-            let wing = showsRecording || showsClipSaved || showsClipping ? Self.recordingWing : Self.compactWing
+            let wing = alert != nil || showsRecording || showsClipSaved || showsClipping ? Self.recordingWing : Self.compactWing
             return CGSize(width: gap + wing * 2 + topRadius * 2, height: notchSize.height)
         }
         return hasNotch ? CGSize(width: notchSize.width + topRadius * 2, height: notchSize.height) : .zero
     }
 
     func welcome() {
+        NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now)
         isWelcoming = true
         isExpanded = true
     }

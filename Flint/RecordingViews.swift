@@ -59,11 +59,11 @@ struct ActiveRecordingPanel: View {
                         RecordingDot(isPaused: ember.state == .paused, isBright: tick.isMultiple(of: 2))
                         Text(ember.state == .paused ? "Paused" : "Recording with Ember")
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.6))
+                            .foregroundStyle(.ink.opacity(0.6))
                     }
                     Text(RecordingClock.format(ember.elapsed(at: context.date)))
                         .font(.system(size: 30, weight: .semibold).monospacedDigit())
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.ink)
                         .contentTransition(.numericText())
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -97,11 +97,11 @@ struct EmberIdlePanel: View {
                             .frame(width: 8, height: 8)
                         Text(ember.justSavedClip ? "Clip saved" : ember.isClipping ? "Clipping" : "Clipping is off")
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.6))
+                            .foregroundStyle(.ink.opacity(0.6))
                     }
                     Text(ember.isClipping ? RecordingClock.format(ember.clippingElapsed(at: context.date)) : "Ember")
                         .font(.system(size: 30, weight: .semibold).monospacedDigit())
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.ink)
                         .contentTransition(.numericText())
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -142,7 +142,7 @@ struct CompactClippingView: View {
                 Spacer(minLength: gap)
                 Text(RecordingClock.format(ember.clippingElapsed(at: context.date)))
                     .font(.system(size: 12, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.ink)
                     .frame(width: IslandModel.recordingWing, alignment: .center)
             }
             .frame(height: height)
@@ -163,7 +163,7 @@ struct CompactClipSavedView: View {
             Spacer(minLength: gap)
             Text("Saved")
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.ink)
                 .frame(width: IslandModel.recordingWing, alignment: .center)
         }
         .frame(height: height)
@@ -182,7 +182,7 @@ struct RoundControl: View {
         } label: {
             Image(systemName: symbol)
                 .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.ink)
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: 44, height: 44)
                 .background(fill, in: Circle())

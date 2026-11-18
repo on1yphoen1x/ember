@@ -11,6 +11,10 @@ enum SettingsKey {
     static let lockScreenBattery = "lockScreenBattery"
     static let wordByWord = "wordByWord"
     static let hasWelcomed = "hasWelcomed"
+    static let showsWeather = "showsWeather"
+    static let roundedCorners = "roundedCorners"
+    static let showsAlerts = "showsAlerts"
+    static let showsIslandLyrics = "showsIslandLyrics"
 }
 
 enum SourcePreference: String, CaseIterable, Identifiable {
@@ -40,14 +44,15 @@ enum SourcePreference: String, CaseIterable, Identifiable {
 }
 
 enum IslandStyle: String, CaseIterable, Identifiable {
-    case solid, glass
+    case solid, glass, light
 
     var id: Self { self }
 
     var title: String {
         switch self {
-        case .solid: "Solid"
+        case .solid: "Dark"
         case .glass: "Glass"
+        case .light: "Light"
         }
     }
 }

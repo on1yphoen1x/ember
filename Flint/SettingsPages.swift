@@ -2,7 +2,12 @@ import ServiceManagement
 import SwiftUI
 
 struct GeneralSettings: View {
+    let weather: Weather
+
     @AppStorage("showsMenuBarIcon") private var showsMenuBarIcon = true
+    @AppStorage(SettingsKey.showsWeather) private var showsWeather = true
+    @AppStorage(SettingsKey.roundedCorners) private var roundedCorners = true
+    @AppStorage(SettingsKey.showsAlerts) private var showsAlerts = true
     @AppStorage(SettingsKey.hasWelcomed) private var hasWelcomed = true
     @State private var launchesAtLogin = SMAppService.mainApp.status == .enabled
 
@@ -28,6 +33,18 @@ struct GeneralSettings: View {
             }
 
             Section {
+                Toggle("Show the weather", isOn: $showsWeather)
+                    .onChange(of: showsWeather) { _, _ in weather.refresh() }
+                Toggle("Note charging and headphones in the notch", isOn: $showsAlerts)
+                Toggle("Round the bottom corners of the screen", isOn: $roundedCorners)
+            } header: {
+                Text("Your Mac")
+            } footer: {
+                Text("Weather comes from Open-Meteo using your approximate location, which macOS asks you to allow.")
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
                 Button("Show the welcome again") { hasWelcomed = false }
             } footer: {
                 Text("It appears in the notch next time Flint opens.")
@@ -43,11 +60,13 @@ struct MediaSettings: View {
     @ObservedObject var nowPlaying: NowPlaying
     @AppStorage(SettingsKey.mediaSource) private var source = SourcePreference.automatic
     @AppStorage(SettingsKey.showsMedia) private var showsMedia = true
+    @AppStorage(SettingsKey.showsIslandLyrics) private var showsIslandLyrics = true
 
     var body: some View {
         Form {
             Section {
                 Toggle("Show music in the notch", isOn: $showsMedia)
+                Toggle("Show the current lyric line in the notch", isOn: $showsIslandLyrics)
             }
 
             Section {
@@ -144,7 +163,7 @@ struct NotchSettings: View {
             } header: {
                 Text("Look")
             } footer: {
-                Text("Glass lets your wallpaper show through the open notch. The part beside the camera stays black either way.")
+                Text("Glass lets your wallpaper show through the open notch, and Light does the same with a pale tint. The part beside the camera stays black either way.")
                     .foregroundStyle(.secondary)
             }
         }
@@ -156,11 +175,19 @@ struct NotchSettings: View {
 private struct StylePreview: View {
     let style: IslandStyle
 
+    private var fill: AnyShapeStyle {
+        switch style {
+        case .solid: AnyShapeStyle(Color.black)
+        case .glass: AnyShapeStyle(.ultraThinMaterial)
+        case .light: AnyShapeStyle(Color.white.opacity(0.75))
+        }
+    }
+
     var body: some View {
         ZStack(alignment: .top) {
             LinearGradient(colors: [.indigo, .teal, .orange.opacity(0.8)], startPoint: .topLeading, endPoint: .bottomTrailing)
             UnevenRoundedRectangle(bottomLeadingRadius: 14, bottomTrailingRadius: 14, style: .continuous)
-                .fill(style == .solid ? AnyShapeStyle(Color.black) : AnyShapeStyle(.ultraThinMaterial))
+                .fill(fill)
                 .overlay(alignment: .top) {
                     Capsule().fill(.black).frame(width: 34, height: 8)
                 }

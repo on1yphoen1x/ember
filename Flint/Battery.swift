@@ -25,7 +25,7 @@ struct Battery: Equatable {
         return battery
     }
 
-    private static func readNow() -> Battery? {
+    static func readNow() -> Battery? {
         guard let info = IOPSCopyPowerSourcesInfo()?.takeRetainedValue(),
               let sources = IOPSCopyPowerSourcesList(info)?.takeRetainedValue() as? [CFTypeRef] else { return nil }
         for source in sources {

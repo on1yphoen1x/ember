@@ -71,7 +71,7 @@ struct ArtworkView: View {
                     Color.white.opacity(0.12)
                     Image(systemName: "music.note")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.ink.opacity(0.6))
                 }
             }
         }
@@ -81,6 +81,8 @@ struct ArtworkView: View {
 
 struct MediaPlayerView: View {
     @ObservedObject var nowPlaying: NowPlaying
+    @ObservedObject var lyrics: Lyrics
+    @AppStorage(SettingsKey.showsIslandLyrics) private var showsLyrics = true
 
     var body: some View {
         if let track = nowPlaying.track {
@@ -93,10 +95,14 @@ struct MediaPlayerView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(track.title)
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.white)
-                        Text(track.artist)
-                            .font(.system(size: 12))
-                            .foregroundStyle(.white.opacity(0.6))
+                            .foregroundStyle(.ink)
+                        if showsLyrics && !lyrics.lines.isEmpty {
+                            IslandLyricLine(lyrics: lyrics, nowPlaying: nowPlaying, fallback: track.artist)
+                        } else {
+                            Text(track.artist)
+                                .font(.system(size: 12))
+                                .foregroundStyle(.ink.opacity(0.6))
+                        }
                     }
                     .lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -141,9 +147,9 @@ struct Scrubber: View {
 
                 GeometryReader { geometry in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(.white.opacity(0.18))
+                        Capsule().fill(.ink.opacity(0.18))
                         Capsule()
-                            .fill(.white)
+                            .fill(.ink)
                             .frame(width: geometry.size.width * fraction)
                     }
                     .frame(height: dragFraction == nil ? 4 : 7)
@@ -167,7 +173,7 @@ struct Scrubber: View {
                     .frame(width: 38, alignment: .leading)
             }
             .font(.system(size: 10, weight: .medium).monospacedDigit())
-            .foregroundStyle(.white.opacity(0.5))
+            .foregroundStyle(.ink.opacity(0.5))
         }
     }
 
@@ -188,7 +194,7 @@ struct TransportButton: View {
         } label: {
             Image(systemName: symbol)
                 .font(.system(size: size, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.ink)
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: 32, height: 28)
                 .contentShape(Rectangle())
@@ -213,13 +219,13 @@ struct IdleView: View {
         VStack(spacing: 12) {
             Text("Nothing playing")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.ink.opacity(0.7))
             HStack(spacing: 10) {
                 ForEach(MediaSource.allCases.filter(\.isInstalled), id: \.self) { source in
                     Button("Open \(source.scriptName)") { nowPlaying.open(source) }
                         .buttonStyle(.plain)
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.ink)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                         .background(.white.opacity(0.12), in: Capsule())
@@ -227,5 +233,25 @@ struct IdleView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+/// The line being sung, in place of the artist name while synced lyrics are available.
+struct IslandLyricLine: View {
+    @ObservedObject var lyrics: Lyrics
+    @ObservedObject var nowPlaying: NowPlaying
+    let fallback: String
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 0.25, paused: !nowPlaying.isPlaying)) { context in
+            let index = lyrics.currentIndex(at: nowPlaying.position(at: context.date) + 0.2)
+            let text = index.flatMap { lyrics.lines.indices.contains($0) ? lyrics.lines[$0].text : nil } ?? ""
+            Text(text.isEmpty ? fallback : text)
+                .font(.system(size: 12, weight: text.isEmpty ? .regular : .medium))
+                .foregroundStyle(.ink.opacity(text.isEmpty ? 0.6 : 0.85))
+                .id(index)
+                .transition(.opacity.combined(with: .offset(y: 4)))
+                .animation(.easeOut(duration: 0.25), value: index)
+        }
     }
 }
