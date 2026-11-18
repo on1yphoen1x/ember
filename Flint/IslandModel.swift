@@ -17,6 +17,8 @@ final class IslandModel: ObservableObject {
     @Published var isDropTargeted = false
     @Published private(set) var isExpanded = false
     @Published private(set) var isWelcoming = false
+    /// Set when files are dropped on the notch, so it stays open until closed by hand.
+    @Published private(set) var isPinned = false
 
     let nowPlaying: NowPlaying
     let ember: EmberLink
@@ -117,9 +119,8 @@ final class IslandModel: ObservableObject {
         guard !isWelcoming else { return }
         if let preferred { tab = preferred }
         if !tabs.contains(tab) { tab = .media }
-        guard expanded != isExpanded else { return }
+        guard expanded != isExpanded, expanded || !isPinned else { return }
         if expanded {
-            if preferred == nil { tab = defaultTab }
             nowPlaying.refreshPosition()
             NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
         } else {
@@ -128,9 +129,15 @@ final class IslandModel: ObservableObject {
         isExpanded = expanded
     }
 
-    private var defaultTab: Tab {
-        if showsRecording { return .recording }
-        if nowPlaying.track == nil && !shelf.items.isEmpty { return .shelf }
-        return .media
+    func pin() {
+        isPinned = true
+        tab = .shelf
+        isExpanded = true
+    }
+
+    func close() {
+        isPinned = false
+        isDropTargeted = false
+        isExpanded = false
     }
 }

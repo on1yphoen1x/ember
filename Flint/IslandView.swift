@@ -50,6 +50,11 @@ struct IslandView: View {
         .environment(\.colorScheme, style == .light && model.isExpanded ? .light : .dark)
         .animation(spring, value: model.isExpanded)
         .animation(spring, value: model.isWelcoming)
+        .onChange(of: shelf.items.isEmpty) { _, isEmpty in
+            if isEmpty && model.isPinned {
+                withAnimation(spring) { model.close() }
+            }
+        }
         .animation(spring, value: style)
         .animation(spring, value: model.showsCompact)
         .animation(spring, value: model.showsRecording)
@@ -94,8 +99,8 @@ struct IslandView: View {
             .padding(.bottom, 14)
             .contentShape(Rectangle())
             .dropDestination(for: URL.self) { urls, _ in
-                model.tab = .shelf
                 shelf.add(urls)
+                model.pin()
                 return true
             } isTargeted: { targeted in
                 model.isDropTargeted = targeted
@@ -161,6 +166,20 @@ struct IslandHeader: View {
                 if let conditions = weather.conditions {
                     Label(conditions.temperatureText, systemImage: conditions.symbol)
                         .labelStyle(.titleAndIcon)
+                }
+                if model.isPinned {
+                    Button {
+                        withAnimation(.spring(response: 0.42, dampingFraction: 0.8)) { model.close() }
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 20, height: 20)
+                            .background(.white.opacity(0.16), in: Circle())
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(PressScaleStyle())
+                    .help("Close")
                 }
             }
             .font(.system(size: 11, weight: .medium))
