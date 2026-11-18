@@ -15,6 +15,7 @@ final class EmberLink: ObservableObject {
     @Published private(set) var state = State.idle
     @Published private(set) var isRunning = false
     @Published private(set) var isClipping = false
+    @Published private(set) var clippingSince: Date?
     @Published private(set) var justSavedClip = false
 
     private var elapsedAnchor: TimeInterval = 0
@@ -32,9 +33,11 @@ final class EmberLink: ObservableObject {
             let elapsed = (note.userInfo?["elapsed"] as? NSNumber)?.doubleValue ?? 0
             let sentAt = (note.userInfo?["sentAt"] as? NSNumber)?.doubleValue
             let clipping = (note.userInfo?["clipping"] as? NSNumber)?.boolValue ?? false
+            let since = (note.userInfo?["clippingSince"] as? NSNumber)?.doubleValue ?? 0
             MainActor.assumeIsolated {
                 self?.isRunning = true
                 self?.isClipping = clipping
+                self?.clippingSince = clipping && since > 0 ? Date(timeIntervalSince1970: since) : nil
                 self?.apply(state, elapsed: elapsed, sentAt: sentAt)
             }
         })
@@ -64,6 +67,7 @@ final class EmberLink: ObservableObject {
             MainActor.assumeIsolated {
                 self?.isRunning = false
                 self?.isClipping = false
+                self?.clippingSince = nil
                 self?.apply(.idle, elapsed: 0, sentAt: nil)
             }
         })
@@ -94,9 +98,16 @@ final class EmberLink: ObservableObject {
         send("record")
     }
 
-    func openEmber() {
-        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: Self.bundleID) else { return }
-        NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
+    func startClipping() {
+        send("startClipping")
+    }
+
+    func stopClipping() {
+        send("stopClipping")
+    }
+
+    func clippingElapsed(at date: Date) -> TimeInterval {
+        clippingSince.map { max(date.timeIntervalSince($0), 0) } ?? 0
     }
 
     private func showClipSaved() {

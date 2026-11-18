@@ -36,8 +36,13 @@ final class IslandModel: ObservableObject {
         !showsRecording && ember.justSavedClip
     }
 
+    /// Clipping sits above music, since it usually means a game is running full screen.
+    var showsClipping: Bool {
+        !showsRecording && !showsClipSaved && ember.isClipping
+    }
+
     var showsCompact: Bool {
-        showsRecording || showsClipSaved || (nowPlaying.isPlaying && nowPlaying.track != nil)
+        showsRecording || showsClipSaved || showsClipping || (nowPlaying.isPlaying && nowPlaying.track != nil)
     }
 
     var tabs: [Tab] {
@@ -69,7 +74,7 @@ final class IslandModel: ObservableObject {
             return CGSize(width: width + topRadius * 2, height: headerHeight + Self.expandedContentHeight + 14)
         }
         if showsCompact {
-            let wing = showsRecording || showsClipSaved ? Self.recordingWing : Self.compactWing
+            let wing = showsRecording || showsClipSaved || showsClipping ? Self.recordingWing : Self.compactWing
             return CGSize(width: gap + wing * 2 + topRadius * 2, height: notchSize.height)
         }
         return hasNotch ? CGSize(width: notchSize.width + topRadius * 2, height: notchSize.height) : .zero

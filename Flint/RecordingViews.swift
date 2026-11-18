@@ -88,38 +88,65 @@ struct EmberIdlePanel: View {
     @ObservedObject var ember: EmberLink
 
     var body: some View {
-        HStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 7) {
-                    Circle()
-                        .fill(ember.isClipping ? Color.green : Color.white.opacity(0.3))
-                        .frame(width: 8, height: 8)
-                    Text(ember.isClipping ? "Clipping is on" : "Clipping is off")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.6))
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 7) {
+                        Circle()
+                            .fill(ember.isClipping ? Color.green : Color.white.opacity(0.3))
+                            .frame(width: 8, height: 8)
+                        Text(ember.justSavedClip ? "Clip saved" : ember.isClipping ? "Clipping" : "Clipping is off")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.6))
+                    }
+                    Text(ember.isClipping ? RecordingClock.format(ember.clippingElapsed(at: context.date)) : "Ember")
+                        .font(.system(size: 30, weight: .semibold).monospacedDigit())
+                        .foregroundStyle(.white)
+                        .contentTransition(.numericText())
                 }
-                Text(ember.justSavedClip ? "Clip saved" : "Ember")
-                    .font(.system(size: 26, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .contentTransition(.opacity)
-                    .animation(.easeInOut(duration: 0.2), value: ember.justSavedClip)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-            if ember.isClipping {
-                RoundControl(symbol: "film.stack", fill: .white.opacity(0.14), help: "Save clip") {
-                    ember.saveClip()
+                if ember.isClipping {
+                    RoundControl(symbol: "film.stack", fill: .white.opacity(0.14), help: "Save clip") {
+                        ember.saveClip()
+                    }
+                    RoundControl(symbol: "stop.fill", fill: .white.opacity(0.14), help: "Stop clipping") {
+                        ember.stopClipping()
+                    }
+                } else {
+                    RoundControl(symbol: "play.fill", fill: .green, help: "Start clipping") {
+                        ember.startClipping()
+                    }
                 }
-            } else {
-                RoundControl(symbol: "arrow.up.forward.app", fill: .white.opacity(0.14), help: "Open Ember") {
-                    ember.openEmber()
+                RoundControl(symbol: "record.circle", fill: .red, help: "Start recording") {
+                    ember.startRecording()
                 }
             }
-            RoundControl(symbol: "record.circle", fill: .red, help: "Start recording") {
-                ember.startRecording()
-            }
+            .frame(maxHeight: .infinity)
         }
-        .frame(maxHeight: .infinity)
+    }
+}
+
+struct CompactClippingView: View {
+    @ObservedObject var ember: EmberLink
+    let gap: CGFloat
+    let height: CGFloat
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            HStack(spacing: 0) {
+                Circle()
+                    .fill(Color.green)
+                    .frame(width: 8, height: 8)
+                    .frame(width: IslandModel.recordingWing, alignment: .center)
+                Spacer(minLength: gap)
+                Text(RecordingClock.format(ember.clippingElapsed(at: context.date)))
+                    .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(.white)
+                    .frame(width: IslandModel.recordingWing, alignment: .center)
+            }
+            .frame(height: height)
+        }
     }
 }
 
