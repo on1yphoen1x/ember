@@ -25,7 +25,7 @@ jobs:
 
       - name: Build
         run: |
-          xcodebuild -project Canopy.xcodeproj -scheme Canopy \
+          xcodebuild -project Ember.xcodeproj -scheme Ember \
             -configuration Release -derivedDataPath build \
             CURRENT_PROJECT_VERSION=${{ github.run_number }} \
             CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES \
@@ -48,17 +48,17 @@ jobs:
           security find-certificate -c "Ember Self-Signed" -p "$KC" > "$RUNNER_TEMP/sign.pem"
           sudo security add-trusted-cert -d -r trustRoot -p codeSign -k /Library/Keychains/System.keychain "$RUNNER_TEMP/sign.pem"
           codesign --force --timestamp=none --keychain "$KC" --sign "Ember Self-Signed" \
-            --entitlements Canopy/Canopy.entitlements \
-            build/Build/Products/Release/Canopy.app
-          codesign -dr - build/Build/Products/Release/Canopy.app
+            --entitlements Ember/Ember.entitlements \
+            build/Build/Products/Release/Ember.app
+          codesign -dr - build/Build/Products/Release/Ember.app
 
       - name: Package
-        run: ditto -c -k --keepParent build/Build/Products/Release/Canopy.app Canopy.zip
+        run: ditto -c -k --keepParent build/Build/Products/Release/Ember.app Ember.zip
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Canopy
-          path: Canopy.zip
+          name: Ember
+          path: Ember.zip
 
       - name: Publish release
         if: github.ref == 'refs/heads/main'
@@ -66,9 +66,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          gh release create "build-${{ github.run_number }}" Canopy.zip \
-            --title "Canopy build ${{ github.run_number }}" \
-            --notes "Download Canopy.zip, unzip it, drag Canopy into Applications and open it." \
+          gh release create "build-${{ github.run_number }}" Ember.zip \
+            --title "Ember build ${{ github.run_number }}" \
+            --notes "Download Ember.zip, unzip it, drag Ember into Applications and open it." \
             --target "${{ github.sha }}" --latest
           gh release list --limit 100 --json tagName --jq '.[].tagName' \
             | grep -v "^build-${{ github.run_number }}$" \

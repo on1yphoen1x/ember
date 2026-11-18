@@ -13,7 +13,7 @@ final class Updater: ObservableObject {
 
         var errorDescription: String? {
             switch self {
-            case .notInstalled: "Move Canopy into the Applications folder first, then try updating again."
+            case .notInstalled: "Move Ember into the Applications folder first, then try updating again."
             case .badArchive: "The downloaded update didn't contain the app."
             }
         }
@@ -22,7 +22,7 @@ final class Updater: ObservableObject {
     @Published private(set) var available: Release?
     @Published private(set) var isInstalling = false
 
-    private let latestURL = URL(string: "https://api.github.com/repos/on1yphoen1x/canopy/releases/latest")!
+    private let latestURL = URL(string: "https://api.github.com/repos/on1yphoen1x/ember/releases/latest")!
     private var timer: Timer?
 
     var currentBuild: Int {
@@ -59,7 +59,7 @@ final class Updater: ObservableObject {
               (response as? HTTPURLResponse)?.statusCode == 200,
               let payload = try? JSONDecoder().decode(Payload.self, from: data),
               let build = Int(payload.tag_name.replacingOccurrences(of: "build-", with: "")),
-              let asset = payload.assets.first(where: { $0.name == "Canopy.zip" }) else { return false }
+              let asset = payload.assets.first(where: { $0.name == "Ember.zip" }) else { return false }
 
         available = build > currentBuild ? Release(build: build, downloadURL: asset.browser_download_url) : nil
         return true
@@ -80,7 +80,7 @@ final class Updater: ObservableObject {
         defer { isInstalling = false }
 
         let workFolder = FileManager.default.temporaryDirectory
-            .appendingPathComponent("CanopyUpdate-\(release.build)", isDirectory: true)
+            .appendingPathComponent("EmberUpdate-\(release.build)", isDirectory: true)
         try? FileManager.default.removeItem(at: workFolder)
         try FileManager.default.createDirectory(at: workFolder, withIntermediateDirectories: true)
 

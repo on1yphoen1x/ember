@@ -1,4 +1,4 @@
-name: Canopy
+name: Ember
 options:
   bundleIdPrefix: app.phoenixclips
   deploymentTarget:
@@ -9,26 +9,26 @@ settings:
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
 targets:
-  Canopy:
+  Ember:
     type: application
     platform: macOS
     sources:
-      - Canopy
+      - Ember
     settings:
       base:
-        PRODUCT_NAME: Canopy
+        PRODUCT_NAME: Ember
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        PRODUCT_BUNDLE_IDENTIFIER: app.phoenixclips.Canopy
+        PRODUCT_BUNDLE_IDENTIFIER: app.phoenixclips.Ember
     info:
-      path: Canopy/Info.plist
+      path: Ember/Info.plist
       properties:
-        CFBundleDisplayName: Canopy
+        CFBundleDisplayName: Ember
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleShortVersionString: $(MARKETING_VERSION)
         LSUIElement: true
-        NSAppleEventsUsageDescription: Canopy reads the current song from Music and Spotify so it can show it in the notch and control playback.
+        NSAppleEventsUsageDescription: Ember reads the current song from Music and Spotify so it can show it in the notch and control playback.
     entitlements:
-      path: Canopy/Canopy.entitlements
+      path: Ember/Ember.entitlements
       properties:
         com.apple.security.app-sandbox: false
         com.apple.security.network.client: true

@@ -85,7 +85,7 @@ struct MenuPanel: View {
                     .font(.system(size: 11))
                     .foregroundStyle(.tertiary)
                 Spacer()
-                Button("Quit Canopy") { NSApp.terminate(nil) }
+                Button("Quit Ember") { NSApp.terminate(nil) }
                     .keyboardShortcut("q")
             }
         }

@@ -1,11 +1,11 @@
 import SwiftUI
 
 @main
-struct CanopyApp: App {
+struct EmberApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
-        MenuBarExtra("Canopy", systemImage: "rectangle.topthird.inset.filled") {
+        MenuBarExtra("Ember", systemImage: "rectangle.topthird.inset.filled") {
             MenuPanel(nowPlaying: appDelegate.nowPlaying, updater: appDelegate.updater)
         }
         .menuBarExtraStyle(.window)
