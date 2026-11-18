@@ -16,9 +16,10 @@ struct FlintApp: App {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let nowPlaying = NowPlaying()
     let updater = Updater()
+    let ember = EmberLink()
     private var island: IslandController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        island = IslandController(model: IslandModel(nowPlaying: nowPlaying))
+        island = IslandController(model: IslandModel(nowPlaying: nowPlaying, ember: ember))
     }
 }

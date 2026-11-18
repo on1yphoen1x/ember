@@ -42,7 +42,7 @@ final class IslandController {
         self.model = model
         panel = IslandPanel(contentRect: CGRect(origin: .zero, size: Self.panelSize))
 
-        let host = IslandHostingView(rootView: IslandView(model: model, nowPlaying: model.nowPlaying))
+        let host = IslandHostingView(rootView: IslandView(model: model, nowPlaying: model.nowPlaying, ember: model.ember))
         host.sizingOptions = []
         panel.contentView = host
 
