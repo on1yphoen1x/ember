@@ -25,7 +25,6 @@ targets:
         CFBundleDisplayName: Flint
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleShortVersionString: $(MARKETING_VERSION)
-        LSUIElement: true
         NSAppleEventsUsageDescription: Flint reads the current song from Music and Spotify so it can show it in the notch and control playback.
     entitlements:
       path: Flint/Flint.entitlements
