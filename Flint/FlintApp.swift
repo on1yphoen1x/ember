@@ -1,11 +1,11 @@
 import SwiftUI
 
 @main
-struct EmberApp: App {
+struct FlintApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
-        MenuBarExtra("Ember", systemImage: "rectangle.topthird.inset.filled") {
+        MenuBarExtra("Flint", systemImage: "rectangle.topthird.inset.filled") {
             MenuPanel(nowPlaying: appDelegate.nowPlaying, updater: appDelegate.updater)
         }
         .menuBarExtraStyle(.window)

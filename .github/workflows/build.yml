@@ -25,7 +25,7 @@ jobs:
 
       - name: Build
         run: |
-          xcodebuild -project Ember.xcodeproj -scheme Ember \
+          xcodebuild -project Flint.xcodeproj -scheme Flint \
             -configuration Release -derivedDataPath build \
             CURRENT_PROJECT_VERSION=${{ github.run_number }} \
             CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES \
@@ -48,17 +48,20 @@ jobs:
           security find-certificate -c "Ember Self-Signed" -p "$KC" > "$RUNNER_TEMP/sign.pem"
           sudo security add-trusted-cert -d -r trustRoot -p codeSign -k /Library/Keychains/System.keychain "$RUNNER_TEMP/sign.pem"
           codesign --force --timestamp=none --keychain "$KC" --sign "Ember Self-Signed" \
-            --entitlements Ember/Ember.entitlements \
-            build/Build/Products/Release/Ember.app
-          codesign -dr - build/Build/Products/Release/Ember.app
+            --entitlements Flint/Flint.entitlements \
+            build/Build/Products/Release/Flint.app
+          codesign -dr - build/Build/Products/Release/Flint.app
 
       - name: Package
-        run: ditto -c -k --keepParent build/Build/Products/Release/Ember.app Ember.zip
+        # Build 1 shipped as Ember and looks for Ember.zip when it updates.
+        run: |
+          ditto -c -k --keepParent build/Build/Products/Release/Flint.app Flint.zip
+          cp Flint.zip Ember.zip
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Ember
-          path: Ember.zip
+          name: Flint
+          path: Flint.zip
 
       - name: Publish release
         if: github.ref == 'refs/heads/main'
@@ -66,9 +69,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          gh release create "build-${{ github.run_number }}" Ember.zip \
-            --title "Ember build ${{ github.run_number }}" \
-            --notes "Download Ember.zip, unzip it, drag Ember into Applications and open it." \
+          gh release create "build-${{ github.run_number }}" Flint.zip Ember.zip \
+            --title "Flint build ${{ github.run_number }}" \
+            --notes "Download Flint.zip, unzip it, drag Flint into Applications and open it." \
             --target "${{ github.sha }}" --latest
           gh release list --limit 100 --json tagName --jq '.[].tagName' \
             | grep -v "^build-${{ github.run_number }}$" \
