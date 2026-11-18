@@ -32,12 +32,17 @@ final class IslandModel: ObservableObject {
         ember.isActive
     }
 
+    var showsClipSaved: Bool {
+        !showsRecording && ember.justSavedClip
+    }
+
     var showsCompact: Bool {
-        showsRecording || (nowPlaying.isPlaying && nowPlaying.track != nil)
+        showsRecording || showsClipSaved || (nowPlaying.isPlaying && nowPlaying.track != nil)
     }
 
     var tabs: [Tab] {
-        showsRecording ? [.recording, .media, .shelf] : [.media, .shelf]
+        if showsRecording { return [.recording, .media, .shelf] }
+        return ember.isRunning ? [.media, .shelf, .recording] : [.media, .shelf]
     }
 
     var topRadius: CGFloat {
@@ -64,7 +69,7 @@ final class IslandModel: ObservableObject {
             return CGSize(width: width + topRadius * 2, height: headerHeight + Self.expandedContentHeight + 14)
         }
         if showsCompact {
-            let wing = showsRecording ? Self.recordingWing : Self.compactWing
+            let wing = showsRecording || showsClipSaved ? Self.recordingWing : Self.compactWing
             return CGSize(width: gap + wing * 2 + topRadius * 2, height: notchSize.height)
         }
         return hasNotch ? CGSize(width: notchSize.width + topRadius * 2, height: notchSize.height) : .zero
@@ -72,6 +77,7 @@ final class IslandModel: ObservableObject {
 
     func setExpanded(_ expanded: Bool, for preferred: Tab? = nil) {
         if let preferred { tab = preferred }
+        if !tabs.contains(tab) { tab = .media }
         guard expanded != isExpanded else { return }
         if expanded {
             if preferred == nil { tab = defaultTab }

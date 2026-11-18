@@ -32,6 +32,7 @@ struct IslandView: View {
         .animation(spring, value: model.isExpanded)
         .animation(spring, value: model.showsCompact)
         .animation(spring, value: model.showsRecording)
+        .animation(spring, value: model.showsClipSaved)
         .animation(spring, value: model.notchSize)
         .animation(.spring(response: 0.3, dampingFraction: 0.85), value: model.tab)
     }
@@ -78,6 +79,9 @@ struct IslandView: View {
                 .onTapGesture {
                     withAnimation(spring) { model.setExpanded(true) }
                 }
+        } else if model.showsClipSaved {
+            CompactClipSavedView(gap: model.gap, height: model.notchSize.height)
+                .transition(shrink)
         } else if model.showsCompact {
             CompactMediaView(nowPlaying: nowPlaying, gap: model.gap, height: model.notchSize.height)
                 .transition(shrink)
@@ -130,7 +134,7 @@ struct IslandHeader: View {
         switch tab {
         case .media: "Now Playing"
         case .shelf: "Shelf"
-        case .recording: "Recording"
+        case .recording: "Ember"
         }
     }
 }
