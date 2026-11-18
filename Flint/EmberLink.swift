@@ -113,6 +113,7 @@ final class EmberLink: ObservableObject {
     private func showClipSaved() {
         savedClipTask?.cancel()
         justSavedClip = true
+        NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
         savedClipTask = Task {
             try? await Task.sleep(for: .seconds(2.2))
             guard !Task.isCancelled else { return }

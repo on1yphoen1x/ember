@@ -87,19 +87,27 @@ struct SyncedLyrics: View {
     @ObservedObject var lyrics: Lyrics
     @ObservedObject var nowPlaying: NowPlaying
     let isFullScreen: Bool
+    @AppStorage(SettingsKey.wordByWord) private var wordByWord = true
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 0.25, paused: !nowPlaying.isPlaying)) { context in
-            let current = lyrics.currentIndex(at: nowPlaying.position(at: context.date) + 0.2)
+        TimelineView(.animation(minimumInterval: wordByWord ? 0.1 : 0.25, paused: !nowPlaying.isPlaying)) { context in
+            let position = nowPlaying.position(at: context.date) + 0.2
+            let current = lyrics.currentIndex(at: position)
             ScrollViewReader { proxy in
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: isFullScreen ? 26 : 16) {
                         Color.clear.frame(height: isFullScreen ? 160 : 60)
                         ForEach(lines) { line in
                             let isCurrent = line.id == current
-                            Text(line.text.isEmpty ? "\u{266A}" : line.text)
-                                .font(.system(size: isFullScreen ? 46 : 26, weight: .bold))
-                                .foregroundStyle(.white.opacity(isCurrent ? 1 : 0.32))
+                            Group {
+                                if isCurrent && wordByWord && !line.text.isEmpty {
+                                    KaraokeLine(text: line.text, start: line.time, end: lyrics.endTime(of: line.id), position: position)
+                                } else {
+                                    Text(line.text.isEmpty ? "\u{266A}" : line.text)
+                                        .foregroundStyle(.white.opacity(isCurrent ? 1 : 0.32))
+                                }
+                            }
+                            .font(.system(size: isFullScreen ? 46 : 26, weight: .bold))
                                 .scaleEffect(isCurrent ? 1 : 0.96, anchor: .leading)
                                 .blur(radius: isCurrent || !isFullScreen ? 0 : 0.6)
                                 .frame(maxWidth: .infinity, alignment: .leading)

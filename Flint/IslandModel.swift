@@ -16,20 +16,41 @@ final class IslandModel: ObservableObject {
     @Published var tab = Tab.media
     @Published var isDropTargeted = false
     @Published private(set) var isExpanded = false
+    @Published private(set) var isWelcoming = false
 
     let nowPlaying: NowPlaying
     let ember: EmberLink
     let shelf: Shelf
+    let lyrics: Lyrics
+    let devices: DeviceWatcher
+    let weather: Weather
 
-    init(nowPlaying: NowPlaying, ember: EmberLink, shelf: Shelf) {
+    init(nowPlaying: NowPlaying, ember: EmberLink, shelf: Shelf, lyrics: Lyrics, devices: DeviceWatcher, weather: Weather) {
         self.nowPlaying = nowPlaying
         self.ember = ember
         self.shelf = shelf
+        self.lyrics = lyrics
+        self.devices = devices
+        self.weather = weather
+    }
+
+    /// Charging and headphone notes briefly take over the closed island.
+    var alert: IslandAlert? {
+        guard UserDefaults.standard.bool(forKey: SettingsKey.showsAlerts, default: true) else { return nil }
+        return devices.alert
     }
 
     /// A recording takes the island over from music until it stops.
     var showsRecording: Bool {
         ember.isActive
+    }
+
+    private var showsMedia: Bool {
+        UserDefaults.standard.bool(forKey: SettingsKey.showsMedia, default: true)
+    }
+
+    private var showsEmber: Bool {
+        UserDefaults.standard.bool(forKey: SettingsKey.showsEmber, default: true)
     }
 
     var showsClipSaved: Bool {
@@ -38,11 +59,11 @@ final class IslandModel: ObservableObject {
 
     /// Clipping sits above music, since it usually means a game is running full screen.
     var showsClipping: Bool {
-        !showsRecording && !showsClipSaved && ember.isClipping
+        showsEmber && !showsRecording && !showsClipSaved && ember.isClipping
     }
 
     var showsCompact: Bool {
-        showsRecording || showsClipSaved || showsClipping || (nowPlaying.isPlaying && nowPlaying.track != nil)
+        alert != nil || showsRecording || showsClipSaved || showsClipping || (showsMedia && nowPlaying.isPlaying && nowPlaying.track != nil)
     }
 
     var tabs: [Tab] {
@@ -74,13 +95,26 @@ final class IslandModel: ObservableObject {
             return CGSize(width: width + topRadius * 2, height: headerHeight + Self.expandedContentHeight + 14)
         }
         if showsCompact {
-            let wing = showsRecording || showsClipSaved || showsClipping ? Self.recordingWing : Self.compactWing
+            let wing = alert != nil || showsRecording || showsClipSaved || showsClipping ? Self.recordingWing : Self.compactWing
             return CGSize(width: gap + wing * 2 + topRadius * 2, height: notchSize.height)
         }
         return hasNotch ? CGSize(width: notchSize.width + topRadius * 2, height: notchSize.height) : .zero
     }
 
+    func welcome() {
+        NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now)
+        isWelcoming = true
+        isExpanded = true
+    }
+
+    func finishWelcome() {
+        UserDefaults.standard.set(true, forKey: SettingsKey.hasWelcomed)
+        isWelcoming = false
+        isExpanded = false
+    }
+
     func setExpanded(_ expanded: Bool, for preferred: Tab? = nil) {
+        guard !isWelcoming else { return }
         if let preferred { tab = preferred }
         if !tabs.contains(tab) { tab = .media }
         guard expanded != isExpanded else { return }

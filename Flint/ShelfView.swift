@@ -14,7 +14,7 @@ struct ShelfView: View {
                     Text(shelf.isAdding ? "Adding..." : "Drop files here to keep them in the notch")
                         .font(.system(size: 12, weight: .medium))
                 }
-                .foregroundStyle(.white.opacity(isTargeted ? 0.9 : 0.5))
+                .foregroundStyle(.ink.opacity(isTargeted ? 0.9 : 0.5))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -31,7 +31,7 @@ struct ShelfView: View {
                     }
                     .background {
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(.white.opacity(isTargeted ? 0.1 : 0))
+                            .fill(.ink.opacity(isTargeted ? 0.1 : 0))
                     }
 
                     VStack(spacing: 8) {
@@ -61,7 +61,7 @@ struct ShelfTile: View {
                 .frame(width: 44, height: 44)
             Text(url.lastPathComponent)
                 .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(.white.opacity(0.8))
+                .foregroundStyle(.ink.opacity(0.8))
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
                 .frame(width: 72, height: 26, alignment: .top)
@@ -76,7 +76,7 @@ struct ShelfTile: View {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 14))
                         .symbolRenderingMode(.palette)
-                        .foregroundStyle(.white, .gray)
+                        .foregroundStyle(.ink, .gray)
                 }
                 .buttonStyle(.plain)
                 .transition(.scale.combined(with: .opacity))
@@ -111,7 +111,7 @@ struct ShelfButton: View {
         } label: {
             Image(systemName: symbol)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.ink)
                 .frame(width: 32, height: 32)
                 .background(.white.opacity(0.12), in: Circle())
                 .contentShape(Circle())
