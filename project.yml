@@ -1,0 +1,35 @@
+name: Canopy
+options:
+  bundleIdPrefix: app.phoenixclips
+  deploymentTarget:
+    macOS: "15.0"
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  Canopy:
+    type: application
+    platform: macOS
+    sources:
+      - Canopy
+    settings:
+      base:
+        PRODUCT_NAME: Canopy
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        PRODUCT_BUNDLE_IDENTIFIER: app.phoenixclips.Canopy
+    info:
+      path: Canopy/Info.plist
+      properties:
+        CFBundleDisplayName: Canopy
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        LSUIElement: true
+        NSAppleEventsUsageDescription: Canopy reads the current song from Music and Spotify so it can show it in the notch and control playback.
+    entitlements:
+      path: Canopy/Canopy.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+        com.apple.security.network.client: true
+        com.apple.security.automation.apple-events: true
