@@ -144,7 +144,18 @@ final class NowPlaying: ObservableObject {
         anchorPosition(value)
     }
 
+    /// Starts over after the preferred player changes in Settings.
+    func reload() {
+        clear()
+        loadInitialState()
+    }
+
+    private func accepts(_ source: MediaSource) -> Bool {
+        SourcePreference.current.source.map { $0 == source } ?? true
+    }
+
     private func apply(_ info: PlayerInfo, from source: MediaSource) {
+        guard accepts(source) else { return }
         let playing = info.state == "Playing"
 
         if info.state == "Stopped" || info.title == nil {
@@ -181,7 +192,7 @@ final class NowPlaying: ObservableObject {
     }
 
     private func loadInitialState() {
-        for source in MediaSource.allCases where source.isRunning {
+        for source in MediaSource.allCases where source.isRunning && accepts(source) {
             guard let state = run("player state as string", in: source)?.stringValue, state == "playing" || state == "paused",
                   let title = run("name of current track", in: source)?.stringValue else { continue }
             let artist = run("artist of current track", in: source)?.stringValue ?? ""

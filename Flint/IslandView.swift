@@ -6,6 +6,10 @@ struct IslandView: View {
     @ObservedObject var ember: EmberLink
     @ObservedObject var shelf: Shelf
 
+    @AppStorage(SettingsKey.islandStyle) private var style = IslandStyle.solid
+    @AppStorage(SettingsKey.showsMedia) private var showsMedia = true
+    @AppStorage(SettingsKey.showsEmber) private var showsEmber = true
+
     private let spring = Animation.spring(response: 0.42, dampingFraction: 0.8)
 
     var body: some View {
@@ -14,10 +18,15 @@ struct IslandView: View {
         let shape = IslandShape(topRadius: model.topRadius, bottomRadius: model.bottomRadius)
 
         ZStack(alignment: .top) {
-            shape
-                .fill(.black)
-                .frame(width: size.width, height: size.height)
-                .opacity(isVisible ? 1 : 0)
+            Group {
+                if style == .glass && model.isExpanded {
+                    GlassFill(headerHeight: model.headerHeight)
+                } else {
+                    Color.black
+                }
+            }
+            .frame(width: size.width, height: size.height)
+            .opacity(isVisible ? 1 : 0)
 
             content
                 .frame(width: max(size.width - model.topRadius * 2, 0), height: size.height, alignment: .top)
@@ -26,10 +35,20 @@ struct IslandView: View {
         // instead of lingering outside while it fades.
         .frame(width: size.width, height: size.height, alignment: .top)
         .mask(shape)
+        .overlay {
+            if style == .glass && model.isExpanded {
+                shape
+                    .stroke(LinearGradient(colors: [.clear, .white.opacity(0.22)], startPoint: .top, endPoint: .bottom), lineWidth: 1)
+                    .frame(width: size.width, height: size.height)
+                    .frame(maxHeight: .infinity, alignment: .top)
+            }
+        }
         .shadow(color: .black.opacity(model.isExpanded ? 0.45 : 0), radius: 14, y: 6)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .environment(\.colorScheme, .dark)
         .animation(spring, value: model.isExpanded)
+        .animation(spring, value: model.isWelcoming)
+        .animation(spring, value: style)
         .animation(spring, value: model.showsCompact)
         .animation(spring, value: model.showsRecording)
         .animation(spring, value: model.showsClipSaved)
@@ -44,7 +63,13 @@ struct IslandView: View {
 
     @ViewBuilder
     private var content: some View {
-        if model.isExpanded {
+        if model.isWelcoming {
+            WelcomeView(model: model)
+                .padding(.top, model.headerHeight)
+                .padding(.horizontal, 18)
+                .padding(.bottom, 14)
+                .transition(shrink)
+        } else if model.isExpanded {
             VStack(spacing: 0) {
                 IslandHeader(model: model, shelf: shelf)
                     .frame(height: model.headerHeight)

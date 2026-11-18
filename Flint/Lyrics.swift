@@ -41,6 +41,13 @@ final class Lyrics: ObservableObject {
         return []
     }
 
+    /// When the given line gives way to the next one.
+    func endTime(of index: Int) -> Double {
+        let lines = lines
+        guard lines.indices.contains(index) else { return 0 }
+        return lines.indices.contains(index + 1) ? lines[index + 1].time : lines[index].time + 5
+    }
+
     /// The line being sung at the given position, or nil before the first one starts.
     func currentIndex(at position: Double) -> Int? {
         let lines = lines

@@ -2,15 +2,23 @@ import ServiceManagement
 import SwiftUI
 
 enum Page: String, CaseIterable, Identifiable {
-    case lyrics, shelf, settings
+    case lyrics, shelf, general, media, notch, lockScreen, ember, updates
 
     var id: Self { self }
+
+    static let library: [Page] = [.lyrics, .shelf]
+    static let settings: [Page] = [.general, .media, .notch, .lockScreen, .ember, .updates]
 
     var title: String {
         switch self {
         case .lyrics: "Lyrics"
         case .shelf: "Shelf"
-        case .settings: "Settings"
+        case .general: "General"
+        case .media: "Media"
+        case .notch: "Notch"
+        case .lockScreen: "Lock Screen"
+        case .ember: "Ember"
+        case .updates: "Updates"
         }
     }
 
@@ -18,7 +26,25 @@ enum Page: String, CaseIterable, Identifiable {
         switch self {
         case .lyrics: "quote.bubble"
         case .shelf: "tray.full"
-        case .settings: "gearshape"
+        case .general: "gearshape"
+        case .media: "play.square"
+        case .notch: "rectangle.topthird.inset.filled"
+        case .lockScreen: "lock.rectangle"
+        case .ember: "record.circle"
+        case .updates: "arrow.triangle.2.circlepath"
+        }
+    }
+
+    var tint: Color {
+        switch self {
+        case .lyrics: .pink
+        case .shelf: .blue
+        case .general: .gray
+        case .media: .red
+        case .notch: .indigo
+        case .lockScreen: .teal
+        case .ember: .orange
+        case .updates: .green
         }
     }
 }
@@ -30,17 +56,22 @@ struct MainWindow: View {
     @ObservedObject var updater: Updater
     let lockScreen: LockScreenLyrics
 
+    @Environment(\.openWindow) private var openWindow
     @State private var page: Page? = .lyrics
     @State private var columns = NavigationSplitViewVisibility.all
     @State private var isFullScreen = false
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columns) {
-            List(Page.allCases, selection: $page) { page in
-                Label(page.title, systemImage: page.symbol)
-                    .tag(page)
+            List(selection: $page) {
+                Section {
+                    ForEach(Page.library) { SidebarRow(page: $0).tag($0) }
+                }
+                Section("Settings") {
+                    ForEach(Page.settings) { SidebarRow(page: $0).tag($0) }
+                }
             }
-            .navigationSplitViewColumnWidth(min: 160, ideal: 180)
+            .navigationSplitViewColumnWidth(min: 170, ideal: 190)
         } detail: {
             switch page ?? .lyrics {
             case .lyrics:
@@ -58,11 +89,25 @@ struct MainWindow: View {
                     }
             case .shelf:
                 ShelfPage(shelf: shelf)
-            case .settings:
-                SettingsPage(updater: updater, lockScreen: lockScreen)
+            case .general:
+                GeneralSettings()
+            case .media:
+                MediaSettings(nowPlaying: nowPlaying)
+            case .notch:
+                NotchSettings()
+            case .lockScreen:
+                LockScreenSettings(lockScreen: lockScreen)
+            case .ember:
+                EmberSettings()
+            case .updates:
+                UpdateSettings(updater: updater)
             }
         }
-        .frame(minWidth: 640, minHeight: 440)
+        .frame(minWidth: 680, minHeight: 460)
+        .onAppear {
+            NSApp.setActivationPolicy(.regular)
+            MainWindowOpener.action = { openWindow(id: "main") }
+        }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didExitFullScreenNotification)) { _ in
             isFullScreen = false
             columns = .all
@@ -126,70 +171,18 @@ struct ShelfPage: View {
     }
 }
 
-struct SettingsPage: View {
-    @ObservedObject var updater: Updater
-    let lockScreen: LockScreenLyrics
-
-    @AppStorage("showsMenuBarIcon") private var showsMenuBarIcon = true
-    @State private var launchesAtLogin = SMAppService.mainApp.status == .enabled
-    @State private var lockScreenLyrics = false
-    @State private var updateMessage: String?
+struct SidebarRow: View {
+    let page: Page
 
     var body: some View {
-        Form {
-            Section("General") {
-                Toggle("Open Flint when you log in", isOn: $launchesAtLogin)
-                    .onChange(of: launchesAtLogin) { _, enabled in
-                        do {
-                            if enabled {
-                                try SMAppService.mainApp.register()
-                            } else {
-                                try SMAppService.mainApp.unregister()
-                            }
-                        } catch {
-                            launchesAtLogin = SMAppService.mainApp.status == .enabled
-                        }
-                    }
-                Toggle("Show Flint in the menu bar", isOn: $showsMenuBarIcon)
-            }
-
-            Section {
-                Toggle("Show lyrics on the lock screen", isOn: $lockScreenLyrics)
-                    .onChange(of: lockScreenLyrics) { _, enabled in lockScreen.isEnabled = enabled }
-            } header: {
-                Text("Lyrics")
-            } footer: {
-                Text("Lyrics come from LRCLIB. The lock screen uses a part of macOS that Apple doesn't officially open to apps, so it may stop working after a macOS update.")
-                    .foregroundStyle(.secondary)
-            }
-
-            Section("Updates") {
-                LabeledContent("Installed", value: "Build \(updater.currentBuild)")
-                if let release = updater.available {
-                    Button(updater.isInstalling ? "Installing..." : "Install build \(release.build)") {
-                        Task {
-                            do {
-                                try await updater.install()
-                            } catch {
-                                updateMessage = error.localizedDescription
-                            }
-                        }
-                    }
-                    .disabled(updater.isInstalling)
-                } else {
-                    Button("Check for Updates") {
-                        Task {
-                            let reached = await updater.check()
-                            updateMessage = !reached ? "Couldn't reach GitHub." : updater.available == nil ? "You're on the latest build." : nil
-                        }
-                    }
-                }
-                if let updateMessage {
-                    Text(updateMessage).foregroundStyle(.secondary)
-                }
-            }
+        Label {
+            Text(page.title)
+        } icon: {
+            Image(systemName: page.symbol)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 22, height: 22)
+                .background(page.tint.gradient, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
-        .formStyle(.grouped)
-        .onAppear { lockScreenLyrics = lockScreen.isEnabled }
     }
 }
