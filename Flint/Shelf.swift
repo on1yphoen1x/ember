@@ -17,25 +17,28 @@ final class Shelf: ObservableObject {
     }
 
     func add(_ urls: [URL]) {
-        let files = urls.filter { $0.isFileURL && $0.deletingLastPathComponent().standardizedFileURL != folder.standardizedFileURL }
+        let target = folder.standardizedFileURL
+        let files = urls.filter { $0.isFileURL && $0.deletingLastPathComponent().standardizedFileURL != target }
         guard !files.isEmpty else { return }
         isAdding = true
-        let folder = folder
         Task {
-            await Task.detached(priority: .userInitiated) {
-                for file in files {
-                    let target = Self.freeName(for: file.lastPathComponent, in: folder)
-                    // A hard link is instant and takes no extra space; copying is the
-                    // fallback for other volumes and for folders.
-                    do {
-                        try FileManager.default.linkItem(at: file, to: target)
-                    } catch {
-                        try? FileManager.default.copyItem(at: file, to: target)
-                    }
-                }
-            }.value
+            await Self.store(files, in: target)
             isAdding = false
             reload()
+        }
+    }
+
+    /// Runs off the main thread so a large copy doesn't freeze the island.
+    private nonisolated static func store(_ files: [URL], in folder: URL) async {
+        for file in files {
+            let target = freeName(for: file.lastPathComponent, in: folder)
+            // A hard link is instant and takes no extra space; copying is the
+            // fallback for other volumes and for folders.
+            do {
+                try FileManager.default.linkItem(at: file, to: target)
+            } catch {
+                try? FileManager.default.copyItem(at: file, to: target)
+            }
         }
     }
 
