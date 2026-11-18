@@ -33,6 +33,7 @@ struct IslandView: View {
         .animation(spring, value: model.showsCompact)
         .animation(spring, value: model.showsRecording)
         .animation(spring, value: model.showsClipSaved)
+        .animation(spring, value: model.showsClipping)
         .animation(spring, value: model.notchSize)
         .animation(.spring(response: 0.3, dampingFraction: 0.85), value: model.tab)
     }
@@ -82,6 +83,12 @@ struct IslandView: View {
         } else if model.showsClipSaved {
             CompactClipSavedView(gap: model.gap, height: model.notchSize.height)
                 .transition(shrink)
+        } else if model.showsClipping {
+            CompactClippingView(ember: ember, gap: model.gap, height: model.notchSize.height)
+                .transition(shrink)
+                .onTapGesture {
+                    withAnimation(spring) { model.setExpanded(true, for: .recording) }
+                }
         } else if model.showsCompact {
             CompactMediaView(nowPlaying: nowPlaying, gap: model.gap, height: model.notchSize.height)
                 .transition(shrink)
