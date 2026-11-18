@@ -1,4 +1,4 @@
-name: Ember
+name: Flint
 options:
   bundleIdPrefix: app.phoenixclips
   deploymentTarget:
@@ -9,26 +9,26 @@ settings:
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
 targets:
-  Ember:
+  Flint:
     type: application
     platform: macOS
     sources:
-      - Ember
+      - Flint
     settings:
       base:
-        PRODUCT_NAME: Ember
+        PRODUCT_NAME: Flint
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        PRODUCT_BUNDLE_IDENTIFIER: app.phoenixclips.Ember
+        PRODUCT_BUNDLE_IDENTIFIER: app.phoenixclips.FlintNotch
     info:
-      path: Ember/Info.plist
+      path: Flint/Info.plist
       properties:
-        CFBundleDisplayName: Ember
+        CFBundleDisplayName: Flint
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleShortVersionString: $(MARKETING_VERSION)
         LSUIElement: true
-        NSAppleEventsUsageDescription: Ember reads the current song from Music and Spotify so it can show it in the notch and control playback.
+        NSAppleEventsUsageDescription: Flint reads the current song from Music and Spotify so it can show it in the notch and control playback.
     entitlements:
-      path: Ember/Ember.entitlements
+      path: Flint/Flint.entitlements
       properties:
         com.apple.security.app-sandbox: false
         com.apple.security.network.client: true
