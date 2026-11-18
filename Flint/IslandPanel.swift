@@ -36,13 +36,15 @@ final class IslandController {
     private var hoverTask: Task<Void, Never>?
     private var isPointerInside = false
     private var anchorX: CGFloat = 0
+    private var dragChangeCount = 0
+    private var isFileDragging = false
     private var screenTop: CGFloat = 0
 
     init(model: IslandModel) {
         self.model = model
         panel = IslandPanel(contentRect: CGRect(origin: .zero, size: Self.panelSize))
 
-        let host = IslandHostingView(rootView: IslandView(model: model, nowPlaying: model.nowPlaying, ember: model.ember))
+        let host = IslandHostingView(rootView: IslandView(model: model, nowPlaying: model.nowPlaying, ember: model.ember, shelf: model.shelf))
         host.sizingOptions = []
         panel.contentView = host
 
@@ -57,16 +59,38 @@ final class IslandController {
 
         // Global monitors see movement over other apps; the local one takes over once
         // the panel starts accepting clicks and the events are delivered to us instead.
-        if let global = NSEvent.addGlobalMonitorForEvents(matching: .mouseMoved, handler: { [weak self] _ in
-            MainActor.assumeIsolated { self?.pointerMoved() }
+        let events: NSEvent.EventTypeMask = [.mouseMoved, .leftMouseDown, .leftMouseDragged, .leftMouseUp]
+        if let global = NSEvent.addGlobalMonitorForEvents(matching: events, handler: { [weak self] event in
+            let type = event.type
+            MainActor.assumeIsolated { self?.handle(type) }
         }) {
             monitors.append(global)
         }
-        if let local = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved, .mouseExited], handler: { [weak self] event in
-            MainActor.assumeIsolated { self?.pointerMoved() }
+        if let local = NSEvent.addLocalMonitorForEvents(matching: events, handler: { [weak self] event in
+            let type = event.type
+            MainActor.assumeIsolated { self?.handle(type) }
             return event
         }) {
             monitors.append(local)
+        }
+    }
+
+    private func handle(_ type: NSEvent.EventType) {
+        switch type {
+        case .leftMouseDown:
+            dragChangeCount = NSPasteboard(name: .drag).changeCount
+        case .leftMouseDragged:
+            // Only drags carrying files open the shelf; dragging a window past the notch shouldn't.
+            let pasteboard = NSPasteboard(name: .drag)
+            guard pasteboard.changeCount != dragChangeCount,
+                  pasteboard.types?.contains(.fileURL) == true else { return }
+            isFileDragging = true
+            pointerMoved()
+        case .leftMouseUp:
+            isFileDragging = false
+            pointerMoved()
+        default:
+            pointerMoved()
         }
     }
 
@@ -90,7 +114,12 @@ final class IslandController {
     }
 
     private var hotRect: CGRect {
-        let size = model.size
+        var size = model.size
+        if isFileDragging {
+            // A generous target while carrying files, even when the island is hidden.
+            size.width = max(size.width, model.notchSize.width + 160)
+            size.height = max(size.height, model.notchSize.height + 30)
+        }
         guard size != .zero else { return .null }
         return CGRect(x: anchorX - size.width / 2, y: screenTop - size.height, width: size.width, height: size.height)
             .insetBy(dx: -4, dy: -4)
@@ -102,12 +131,13 @@ final class IslandController {
         guard inside != isPointerInside else { return }
         isPointerInside = inside
 
+        let carryingFiles = isFileDragging
         hoverTask?.cancel()
         hoverTask = Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(inside ? 110 : 280))
+            try? await Task.sleep(for: .milliseconds(inside ? (carryingFiles ? 40 : 110) : 280))
             guard !Task.isCancelled, let self else { return }
-            withAnimation(.spring(response: 0.42, dampingFraction: 0.78)) {
-                self.model.setExpanded(inside)
+            withAnimation(.spring(response: 0.42, dampingFraction: 0.8)) {
+                self.model.setExpanded(inside, for: inside && carryingFiles ? .shelf : nil)
             }
             if !inside { self.panel.ignoresMouseEvents = true }
         }

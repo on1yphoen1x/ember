@@ -6,6 +6,7 @@ struct MenuPanel: View {
     @ObservedObject var updater: Updater
     @State private var launchesAtLogin = SMAppService.mainApp.status == .enabled
     @State private var updateMessage: String?
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -32,6 +33,11 @@ struct MenuPanel: View {
                     }
                     .buttonStyle(.borderless)
                 }
+            }
+
+            Button("Open Flint") {
+                openWindow(id: "main")
+                NSApp.activate()
             }
 
             Divider()
